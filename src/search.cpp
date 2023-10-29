@@ -19,12 +19,12 @@ public:
     AStar(std::vector<std::vector<std::string>>& grid, int startX, int startY, int finishX, int finishY)
     : _grid(grid)
     {
-        _numCols = grid.size(); 
-        _numRows = grid[0].size();
+        _numCols = grid[0].size(); 
+        _numRows = grid.size();
         _points = std::vector<Point>(_numRows * _numCols, {0, 0, 0, 0, nullptr});
 
-        _startPoint = &_points[startX * _numCols + startY];
-        _finishPoint = &_points[finishX * _numCols + finishY];
+        _startPoint = &_points[(startX - 1) * _numRows + startY - 1];
+        _finishPoint = &_points[(finishX - 1) * _numRows + finishY - 1];
         _startPoint->x = startX;
         _startPoint->y = startY;
 
@@ -41,6 +41,7 @@ public:
         _points.clear();
         _openSet.clear();
         _closedSet.clear();
+        _grid.clear();
     }
 
     std::vector<std::vector<std::string>> run(){
@@ -76,10 +77,10 @@ public:
             int newX = x + dx[i];
             int newY = y + dy[i];
 
-            if (newX - 1 >= 0 && newX - 1 < _numRows && newY - 1 >= 0 && newY - 1 < _numCols) {
-                int newIndex = newX * _numCols + newY;
+            if (newX - 1 >= 0 && newX - 1 < _numCols && newY - 1 >= 0 && newY - 1 < _numRows) {
+                int newIndex = (newX - 1) * _numRows + newY - 1;
 
-                if (_grid[newX - 1][newY - 1] != "1" && _closedSet[newIndex] == nullptr) {
+                if (_grid[newY - 1][newX - 1] != "1" && _closedSet[newIndex] == nullptr) {
                     int tentativeG = current->g + 1; 
                     if (_points[newIndex].g == 0 || tentativeG < _points[newIndex].g) {
                         _points[newIndex].x = newX;
@@ -93,7 +94,7 @@ public:
             }
         }
 
-        _closedSet[x * _numCols + y] = current;
+        _closedSet[(x - 1) * _numRows + y - 1] = current;
     }
     return{};
   }
@@ -116,7 +117,7 @@ class PathNode : public rclcpp::Node {
 public:
   PathNode() : Node("path_node") {
     subscription_ = this->create_subscription<path::msg::Data>(
-      "numbers", 10, std::bind(&PathNode::Map, this, std::placeholders::_1));
+      "numbers", 0, std::bind(&PathNode::Map, this, std::placeholders::_1));
   }
   void Map(const path::msg::Data::SharedPtr msg) {
     for (int i = 0; i < msg->y; i++) {
@@ -146,7 +147,7 @@ public:
     std::cout << "M=" << m + 1 << std::endl;
 };
   rclcpp::Subscription<path::msg::Data>::SharedPtr subscription_;
-  std::vector<std::vector<std::string>> map = {};
+  std::vector<std::vector<std::string>> map;
 };
 
 
